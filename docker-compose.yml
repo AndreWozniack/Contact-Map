@@ -1,0 +1,49 @@
+services:
+    db:
+        image: mysql:8.0
+        environment:
+            MYSQL_DATABASE: ${DB_DATABASE}
+            MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+            MYSQL_USER: ${DB_USERNAME}
+            MYSQL_PASSWORD: ${DB_PASSWORD}
+        ports: ["3307:3306"]
+        volumes: [dbdata:/var/lib/mysql]
+        healthcheck:
+            test: ["CMD-SHELL","mysqladmin ping -h localhost -p${DB_ROOT_PASSWORD} || exit 1"]
+            interval: 5s
+            timeout: 3s
+            retries: 20
+
+    mailpit:
+        image: axllent/mailpit:latest
+        ports: ["8025:8025"]
+        environment:
+            MP_MAX_MESSAGES: 500
+
+    php:
+        build: { context: ./infra/php }
+        volumes:
+            - ./apps/backend:/var/www/html
+        depends_on:
+            db: { condition: service_healthy }
+
+    nginx:
+        build: { context: ./infra/nginx }
+        volumes:
+            - ./apps/backend:/var/www/html
+            - ./apps/frontend/dist:/usr/share/nginx/html
+            - ./infra/nginx/default.dev.conf:/etc/nginx/conf.d/default.conf
+        ports: ["8080:80"]
+        depends_on:
+            php: { condition: service_started }
+
+    vite:
+        build: { context: ./infra/node }
+        working_dir: /app
+        command: sh -c "npm i && npm run dev -- --host"
+        volumes:
+            - ./apps/frontend:/app
+        ports: ["5173:5173"]
+
+volumes:
+    dbdata:
