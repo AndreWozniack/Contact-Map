@@ -15,7 +15,8 @@ import { useAuth } from '../contexts/AuthContext'
 import { api } from '../lib/api'
 import { useDebounce } from '../lib/useDebounce'
 import ContactCard from '../components/ContactCard'
-import ContactsMap from "../components/ContactsMap.tsx";
+import ContactsMap from "../components/ContactsMap.tsx"
+import ContactDialog from '../components/ContactDialog'
 
 type Contact = {
     id: number
@@ -50,6 +51,7 @@ export default function ContactsPage() {
     const selected = useMemo(() => rows.find(r => r.id === selectedId) || null, [rows, selectedId])
 
     const totalPages = useMemo(() => Math.max(1, Math.ceil(total / perPage)), [total, perPage])
+    const [openNew, setOpenNew] = useState(false)
 
     async function fetchData() {
         setLoading(true)
@@ -80,17 +82,17 @@ export default function ContactsPage() {
                 <Toolbar sx={{ gap: 1 }}>
                     <Typography variant="h4" sx={{ flex: 1, fontWeight: 700 }}>Contatos</Typography>
 
-                    <Tooltip title="Importar CSV"><span>
-            <IconButton aria-label="Importar" color="inherit"><UploadIcon /></IconButton>
-          </span></Tooltip>
+          {/*          <Tooltip title="Importar CSV"><span>*/}
+          {/*  <IconButton aria-label="Importar" color="inherit"><UploadIcon /></IconButton>*/}
+          {/*</span></Tooltip>*/}
 
-                    <Tooltip title="Exportar CSV"><span>
-            <IconButton aria-label="Exportar" color="inherit"><DownloadIcon /></IconButton>
-          </span></Tooltip>
+          {/*          <Tooltip title="Exportar CSV"><span>*/}
+          {/*  <IconButton aria-label="Exportar" color="inherit"><DownloadIcon /></IconButton>*/}
+          {/*</span></Tooltip>*/}
 
-                    <Tooltip title="Configurações"><span>
-            <IconButton aria-label="Configurações" color="inherit"><SettingsIcon /></IconButton>
-          </span></Tooltip>
+          {/*          <Tooltip title="Configurações"><span>*/}
+          {/*  <IconButton aria-label="Configurações" color="inherit"><SettingsIcon /></IconButton>*/}
+          {/*</span></Tooltip>*/}
 
                     <Divider flexItem orientation="vertical" sx={{ mx: 0.5 }} />
 
@@ -99,22 +101,17 @@ export default function ContactsPage() {
                 </Toolbar>
             </AppBar>
 
-            <Container
-                maxWidth={false}
-                disableGutters
-                sx={{ height: '100%', py: 1, px: 1, mx: 'auto' }}
-            >
+            <Container maxWidth={false} disableGutters sx={{ height: '100%', py: 1, px: 1 }}>
                 <Box
                     sx={{
                         height: '100%',
                         display: 'grid',
-                        gridTemplateColumns: { xs: '1fr', md: 'minmax(380px, 520px) minmax(0, 1fr)' }, // <-- minmax(0,1fr)
+                        gridTemplateColumns: { xs: '1fr', md: 'minmax(380px, 520px) minmax(0, 1fr)' },
                         gap: 1,
                         alignItems: 'stretch'
                     }}
                 >
                     <Box sx={{ height: '100%', display: 'grid', gridTemplateRows: 'auto 1fr' }}>
-                        {/* barra de busca com botão "+" ao lado */}
                         <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
                             <TextField
                                 value={q}
@@ -126,13 +123,29 @@ export default function ContactsPage() {
                                     startAdornment: <InputAdornment position="start"><SearchIcon /></InputAdornment>,
                                 }}
                             />
-                            <Button variant="contained" startIcon={<AddIcon />} sx={{ borderRadius: 2 }}>
+                            <Button
+                                variant="contained"
+                                startIcon={<AddIcon />}
+                                sx={{ borderRadius: 2 }}
+                                onClick={()=>setOpenNew(true)}
+                            >
                                 Novo
                             </Button>
+                            <ContactDialog
+                                open={openNew}
+                                onClose={()=>setOpenNew(false)}
+                                onSaved={(created)=>{
+                                    fetchData().then(()=>{
+                                        setSelectedId(created.id)
+                                    })
+                                }}
+                            />
                         </Stack>
 
+                        {/* Lista de contatos */}
+                        { loading && <LinearProgress sx={{ mb: 1 }} />}
                         <Paper sx={{ p: 1, mb: 1 }}>
-                            <Stack direction="row" spacing={1} alignItems="center">
+                            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
                                 <Select size="small" value={sort} onChange={(e)=>setSort(e.target.value as any)}>
                                     <MenuItem value="name">Nome</MenuItem>
                                     <MenuItem value="cpf">CPF</MenuItem>
@@ -148,43 +161,42 @@ export default function ContactsPage() {
                                 <Button size="small" startIcon={<RefreshIcon />} onClick={fetchData}>Atualizar</Button>
                                 <Button size="small" onClick={reset}>Limpar</Button>
                             </Stack>
+                            <Box ref={listRef} padding='12' sx={{ overflow: 'auto', pr: 0.5}}>
+                                {rows.length === 0 && !loading && (
+                                    <Paper sx={{ p: 2, textAlign: 'center', color: 'text.secondary' }}>Nenhum contato encontrado.</Paper>
+                                )}
+
+                                <Stack spacing={1}>
+                                    {rows.map((c) => (
+                                        <Box key={c.id} data-id={c.id}>
+                                            <ContactCard
+                                                name={c.name}
+                                                subtitle={[c.street, c.number, c.neighborhood, c.city, c.state].filter(Boolean).join(', ')}
+                                                selected={c.id === selectedId}
+                                                onClick={() => setSelectedId(c.id)}
+                                            />
+                                        </Box>
+                                    ))}
+                                </Stack>
+
+                                <Stack direction="row" justifyContent="center" sx={{ py: 1.5 }}>
+                                    <Pagination
+                                        page={page}
+                                        count={totalPages}
+                                        onChange={(_, p)=>setPage(p)}
+                                        color="primary"
+                                    />
+                                </Stack>
+                            </Box>
                         </Paper>
 
                         {loading && <LinearProgress sx={{ mb: 1 }} />}
 
-                        <Box ref={listRef} sx={{ overflow: 'auto', pr: 0.5 }}>
-                            {rows.length === 0 && !loading && (
-                                <Paper sx={{ p: 2, textAlign: 'center', color: 'text.secondary' }}>Nenhum contato encontrado.</Paper>
-                            )}
-
-                            <Stack spacing={1}>
-                                {rows.map((c) => (
-                                    <Box key={c.id} data-id={c.id}>
-                                        <ContactCard
-                                            name={c.name}
-                                            subtitle={[c.street, c.number, c.neighborhood, c.city, c.state].filter(Boolean).join(', ')}
-                                            selected={c.id === selectedId}
-                                            onClick={() => setSelectedId(c.id)}
-                                        />
-                                    </Box>
-                                ))}
-                            </Stack>
-
-                            <Stack direction="row" justifyContent="center" sx={{ py: 1.5 }}>
-                                <Pagination
-                                    page={page}
-                                    count={totalPages}
-                                    onChange={(_, p)=>setPage(p)}
-                                    color="primary"
-                                />
-                            </Stack>
-                        </Box>
                     </Box>
 
-                    {/*Mapa dos contatos*/}
+                    {/* Mapa dos contatos */}
                     <Box sx={{ height: '100%'}}>
                         <Paper sx={{ p: 1, height: '100%', borderRadius: 2 }}>
-                            <Typography variant="subtitle1" sx={{ mb: 1, textAlign: 'center' }}>Mapa dos contatos</Typography>
                             <Box sx={{ height: 'calc(100% - 32px)', borderRadius: 2, overflow: 'hidden' }}>
                                 <ContactsMap
                                     contacts={rows}
