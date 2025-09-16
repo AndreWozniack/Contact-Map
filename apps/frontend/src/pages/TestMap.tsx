@@ -3,7 +3,7 @@ import { GoogleMap, LoadScript, MarkerF } from '@react-google-maps/api'
 
 export default function TestMap() {
     const key = import.meta.env.VITE_GMAPS_KEY as string | undefined
-    const center = { lat: -25.4284, lng: -49.2733 } // Curitiba
+    const center = { lat: -25.4284, lng: -49.2733 }
 
     if (!key) {
         return <Alert severity="error">VITE_GMAPS_KEY não definida em .env.local</Alert>
