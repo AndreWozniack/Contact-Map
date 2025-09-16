@@ -30,4 +30,27 @@ class AddressController extends Controller
 
         return ['items' => $items];
     }
+
+    public function byCep(Request $request)
+    {
+        $data = $request->validate([
+            'cep' => ['required','size:8'],
+        ]);
+
+        $url  = "https://viacep.com.br/ws/{$data['cep']}/json/";
+        $resp = Http::get($url)->json();
+        if (!is_array($resp) || ($resp['erro'] ?? false)) {
+            return response()->json(['message' => 'CEP não encontrado'], 404);
+        }
+
+        return [
+            'address' => [
+                'cep'      => preg_replace('/\D/', '', $resp['cep'] ?? $data['cep']),
+                'state'    => $resp['uf'] ?? '',
+                'city'     => $resp['localidade'] ?? '',
+                'street'   => $resp['logradouro'] ?? '',
+                'district' => $resp['bairro'] ?? '',
+            ],
+        ];
+    }
 }
