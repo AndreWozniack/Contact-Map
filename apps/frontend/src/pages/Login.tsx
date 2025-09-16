@@ -4,6 +4,7 @@ import {
 } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
+import Center from "../components/Center.tsx";
 
 export default function LoginPage() {
     const { login } = useAuth();
@@ -31,43 +32,45 @@ export default function LoginPage() {
     }
 
     return (
-        <Container maxWidth="sm" sx={{ minHeight: '100dvh', display: 'grid', placeItems: 'center' }}>
-            <Box component="form" onSubmit={onSubmit} sx={{ width: '100%' }}>
-                <Stack spacing={3}>
-                    <Box>
-                        <Typography variant="h4" fontWeight={700}>Entrar</Typography>
-                        <Typography color="text.secondary">Acesse sua conta para gerenciar contatos</Typography>
-                    </Box>
+        <Center>
+            <Container maxWidth="sm" sx={{ minHeight: '100dvh', display: 'grid', placeItems: 'center' }}>
+                <Box component="form" onSubmit={onSubmit} sx={{ width: '100%' }}>
+                    <Stack spacing={3}>
+                        <Box>
+                            <Typography variant="h4" fontWeight={700}>Entrar</Typography>
+                            <Typography color="text.secondary">Acesse sua conta para gerenciar contatos</Typography>
+                        </Box>
 
-                    {err && <Alert severity="error">{err}</Alert>}
+                        {err && <Alert severity="error">{err}</Alert>}
 
-                    <TextField
-                        label="E-mail"
-                        type="email"
-                        autoComplete="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                    />
-                    <TextField
-                        label="Senha"
-                        type="password"
-                        autoComplete="current-password"
-                        value={password}
-                        onChange={(e) => setPwd(e.target.value)}
-                        required
-                    />
+                        <TextField
+                            label="E-mail"
+                            type="email"
+                            autoComplete="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                        />
+                        <TextField
+                            label="Senha"
+                            type="password"
+                            autoComplete="current-password"
+                            value={password}
+                            onChange={(e) => setPwd(e.target.value)}
+                            required
+                        />
 
-                    <Button type="submit" variant="contained" size="large" disabled={loading}>
-                        {loading ? <CircularProgress size={22} /> : 'Entrar'}
-                    </Button>
+                        <Button type="submit" variant="contained" size="large" disabled={loading}>
+                            {loading ? <CircularProgress size={22} /> : 'Entrar'}
+                        </Button>
 
-                    <Stack direction="row" justifyContent="space-between">
-                        <Link href="#" underline="hover">Esqueci minha senha</Link>
-                        <Link href="/register" underline="hover">Criar conta</Link>
+                        <Stack direction="row" justifyContent="space-between">
+                            <Link href="#" underline="hover">Esqueci minha senha</Link>
+                            <Link href="/register" underline="hover">Criar conta</Link>
+                        </Stack>
                     </Stack>
-                </Stack>
-            </Box>
-        </Container>
+                </Box>
+            </Container>
+        </Center>
     );
 }
