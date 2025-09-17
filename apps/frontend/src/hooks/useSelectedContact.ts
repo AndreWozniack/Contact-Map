@@ -17,5 +17,26 @@ export function useSelectedContact(rows: Contact[]) {
     if (el) (el as HTMLElement).scrollIntoView({ block: 'nearest' })
   }, [selectedId])
 
+  useEffect(() => {
+    const el = listRef.current
+    if (!el) return
+
+    const onClick = (ev: MouseEvent) => {
+      const target = ev.target as HTMLElement
+      if (!target.closest('[data-id]')) setSelectedId(null)
+    }
+
+    const onKeyDown = (ev: KeyboardEvent) => {
+      if (ev.key === 'Escape') setSelectedId(null)
+    }
+
+    el.addEventListener('click', onClick)
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      el.removeEventListener('click', onClick)
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [])
+
   return { selectedId, setSelectedId, selected, listRef }
 }
