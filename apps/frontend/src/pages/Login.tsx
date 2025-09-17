@@ -66,7 +66,7 @@ export default function LoginPage() {
                         </Button>
 
                         <Stack direction="row" justifyContent="space-between">
-                            <Link href="#" underline="hover">Esqueci minha senha</Link>
+                            <Link href="/forgot-password" underline="hover">Esqueci minha senha</Link>
                             <Link href="/register" underline="hover">Criar conta</Link>
                         </Stack>
                     </Stack>

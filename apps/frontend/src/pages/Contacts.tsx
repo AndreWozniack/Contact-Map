@@ -78,6 +78,7 @@ export default function ContactsPage() {
     setRows((prev) => prev.filter((r) => r.id !== c.id));
     if (selectedId === c.id) setSelectedId(null);
     // TODO: Snackbar “Contato apagado”
+    
   }
 
   return (

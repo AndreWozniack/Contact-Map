@@ -15,8 +15,9 @@ export default function ForgotPasswordPage() {
         try {
             await api.post('/forgot-password', { email }, false)
             setOk('Enviamos um e-mail com as instruções para redefinir sua senha.')
-        } catch (e: any) {
-            setErr(e?.detail?.message || 'Não foi possível enviar o e-mail')
+        } catch (e: unknown) {
+            const error = e as { detail?: { message?: string } };
+            setErr(error?.detail?.message || 'Não foi possível enviar o e-mail');
         } finally { setLoading(false) }
     }
 
