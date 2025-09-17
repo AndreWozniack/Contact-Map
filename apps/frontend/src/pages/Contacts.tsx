@@ -44,7 +44,18 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import Alert from "@mui/material/Alert";
 
-
+/**
+ * Página principal de gerenciamento de contatos
+ * 
+ * Interface principal da aplicação onde usuários podem:
+ * - Visualizar lista de contatos com busca e filtros
+ * - Ver contatos em mapa interativo
+ * - Adicionar, editar e excluir contatos
+ * - Gerenciar dados do perfil
+ * - Fazer logout da aplicação
+ * 
+ * @returns Componente da página de contatos
+ */
 export default function ContactsPage() {
   const { user, logout } = useAuth();
 

@@ -1,6 +1,18 @@
 import { useMemo, useRef, useEffect, useState } from 'react'
 import type { Contact } from '../types'
 
+/**
+ * Hook para gerenciamento de contato selecionado
+ * 
+ * Gerencia a seleção de contatos em uma lista, incluindo:
+ * - Estado do contato atualmente selecionado
+ * - Scroll automático para o contato selecionado
+ * - Limpeza da seleção ao clicar fora ou pressionar Escape
+ * - Referência para o container da lista
+ * 
+ * @param rows Lista de contatos disponíveis
+ * @returns Objeto com estado e funções de seleção
+ */
 export function useSelectedContact(rows: Contact[]) {
   const [selectedId, setSelectedId] = useState<number | null>(null)
 
@@ -38,5 +50,10 @@ export function useSelectedContact(rows: Contact[]) {
     }
   }, [])
 
-  return { selectedId, setSelectedId, selected, listRef }
+  return { 
+    selectedId, 
+    setSelectedId, 
+    selected, 
+    listRef 
+  }
 }

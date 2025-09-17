@@ -6,29 +6,48 @@ import { useAuth } from "../hooks/useAuth";
 import { useLocation, useNavigate } from 'react-router-dom';
 import Center from "../components/Center.tsx";
 
+/**
+ * Página de Login
+ * 
+ * Permite que usuários façam login na aplicação usando email e senha.
+ * Após login bem-sucedido, redireciona para a página que o usuário tentava acessar
+ * ou para a página de contatos por padrão.
+ * 
+ * @returns Componente da página de login
+ */
 export default function LoginPage() {
     const { login } = useAuth();
     const nav = useNavigate();
     const location = useLocation();
     const from = location.state?.from?.pathname ?? '/contacts';
-
     const [email, setEmail] = useState('');
     const [password, setPwd] = useState('');
     const [err, setErr] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
 
+    /**
+     * Manipula o envio do formulário de login
+     * 
+     * @param e Evento do formulário
+     */
     async function onSubmit(e: React.FormEvent) {
         e.preventDefault();
         setErr(null);
         setLoading(true);
+        
         try {
             await login(email, password);
             nav(from, { replace: true });
         } catch (e: unknown) {
+            // Trata diferentes tipos de erro da API
             const error = e as { detail?: { message?: string } };
-            if (error?.detail?.message === 'Invalid credentials') setErr('Credenciais inválidas');
-            if (error?.detail?.message === 'These credentials do not match our records.') setErr('Essas credenciais não correspondem aos nossos registros.');
-            if (!error?.detail?.message) setErr('Não foi possível fazer login');
+            if (error?.detail?.message === 'Invalid credentials') {
+                setErr('Credenciais inválidas');
+            } else if (error?.detail?.message === 'These credentials do not match our records.') {
+                setErr('Essas credenciais não correspondem aos nossos registros.');
+            } else {
+                setErr('Não foi possível fazer login');
+            }
         } finally {
             setLoading(false);
         }

@@ -11,6 +11,17 @@ import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 import './index.css';
 
+/**
+ * Ponto de entrada da aplicação React
+ * 
+ * Configura os provedores globais necessários:
+ * - ThemeProvider: Aplica tema Material Design 3 customizado
+ * - CssBaseline: Normaliza estilos CSS entre navegadores
+ * - BrowserRouter: Habilita roteamento baseado em URL
+ * - AuthProvider: Fornece contexto de autenticação para toda a app
+ * 
+ * Também importa fontes Roboto para consistência visual.
+ */
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
         <ThemeProvider theme={theme}>

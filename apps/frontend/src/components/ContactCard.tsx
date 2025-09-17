@@ -15,14 +15,27 @@ type Props = {
     onClick?: () => void
 }
 
+/**
+ * Componente de card de contato
+ * 
+ * Exibe as informações básicas de um contato em formato de card,
+ * incluindo avatar com inicial, nome, subtítulo e menu de ações.
+ * Suporta estados de seleção e interações hover.
+ * 
+ * @param props Propriedades do componente
+ * @returns Card estilizado com informações do contato
+ */
 export default function ContactCard({ name, subtitle, selected, contact, onCopy, onEdit, onDelete, onClick }: Props) {
     const initial = (name || '?').trim().charAt(0).toUpperCase()
+    
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
     const open = Boolean(anchorEl)
+
     const handleMenuOpen = (e: React.MouseEvent<HTMLElement>) => {
         e.stopPropagation()
         setAnchorEl(e.currentTarget)
     }
+    
     const handleMenuClose = () => setAnchorEl(null)
 
     return (

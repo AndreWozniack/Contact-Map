@@ -9,6 +9,9 @@ import {
     Pin,
 } from "@vis.gl/react-google-maps";
 
+/**
+ * Tipo de contato para exibição no mapa
+ */
 type Contact = {
     id: number;
     name: string;
@@ -22,19 +25,42 @@ type Contact = {
     phone?: string | null;
     cpf?: string | null;
 };
+
+/**
+ * Tipo para definir foco em um contato específico
+ */
 type Focus = { id: number; name: string; lat: number; lng: number };
 
+/**
+ * Props do componente ContactsMap
+ */
+type ContactsMapProps = {
+    /** Lista de contatos a serem exibidos no mapa */
+    contacts: Contact[];
+    /** Altura do mapa (padrão: 100%) */
+    height?: number | string;
+    /** Largura do mapa (padrão: 100%) */
+    width?: number | string;
+    /** Contato para focar e centralizar no mapa */
+    focus?: Focus | null;
+};
+
+/**
+ * Componente de mapa interativo de contatos
+ * 
+ * Exibe contatos com coordenadas válidas em um mapa do Google Maps.
+ * Permite visualizar localização dos contatos, focar em contato específico
+ * e exibir informações em popup ao clicar nos marcadores.
+ * 
+ * @param props Propriedades do componente
+ * @returns Mapa com marcadores dos contatos
+ */
 export default function ContactsMap({
     contacts,
     height = "100%",
     width = "100%",
     focus = null,
-}: {
-    contacts: Contact[];
-    height?: number | string;
-    width?: number | string;
-    focus?: Focus | null;
-}) {
+}: ContactsMapProps) {
     const apiKey = import.meta.env.VITE_GMAPS_KEY as string;
     const mapId = import.meta.env.VITE_GMAPS_MAP_ID as string;
     const h = typeof height === "number" ? `${height}px` : height;

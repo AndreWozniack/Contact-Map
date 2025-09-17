@@ -6,27 +6,46 @@ import { useAuth } from "../hooks/useAuth";
 import Center from "../components/Center.tsx";
 import type { User } from "../contexts/auth-context";
 
+/**
+ * Página de Registro
+ * 
+ * Permite que novos usuários criem uma conta na aplicação.
+ * Após registro bem-sucedido, faz login automaticamente e redireciona
+ * para a página de contatos.
+ * 
+ * @returns Componente da página de registro
+ */
 export default function RegisterPage() {
     const nav = useNavigate()
     const { login } = useAuth()
-    const [form, setForm] = useState({ name: '', email: '', password: '', password_confirmation: '' })
+    const [form, setForm] = useState({
+        name: '',
+        email: '',
+        password: '',
+        password_confirmation: ''
+    })
     const [err, setErr] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
 
-    function upd<K extends keyof typeof form>(k: K, v: string) { setForm({ ...form, [k]: v }) }
+    function upd<K extends keyof typeof form>(k: K, v: string) {
+        setForm({ ...form, [k]: v })
+    }
 
     async function onSubmit(e: React.FormEvent) {
         e.preventDefault()
         setErr(null); setLoading(true)
+
         try {
             const r = await api.post<{ token: string; user: User }>('/register', form, false)
             localStorage.setItem('token', r.token)
-            await login(form.email, form.password) // garante contexto preenchido
+            await login(form.email, form.password)
             nav('/contacts', { replace: true })
         } catch (e: unknown) {
             const error = e as { detail?: { message?: string } };
             setErr(error?.detail?.message || 'Falha ao criar conta');
-        } finally { setLoading(false) }
+        } finally {
+            setLoading(false)
+        }
     }
 
     return (

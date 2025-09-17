@@ -5,7 +5,6 @@ import ForgotPasswordPage from './pages/ForgotPassword'
 import ResetPasswordPage from './pages/ResetPassword'
 import ContactsPage from './pages/Contacts'
 import RequireAuth from './components/RequireAuth'
-import TestMap from "./pages/TestMap.tsx";
 
 /**
  * Componente principal da aplicação
@@ -20,7 +19,6 @@ export default function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/password-reset/:token" element={<ResetPasswordPage />} />
-            <Route path="/map-test" element={<TestMap />} />
             <Route
                 path="/contacts"
                 element={

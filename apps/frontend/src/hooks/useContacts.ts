@@ -6,16 +6,26 @@ import type { Contact, Page } from '../types'
 type SortField = 'name' | 'cpf' | 'created_at'
 type SortDir = 'asc' | 'desc'
 
+/**
+ * Hook para gerenciamento de lista de contatos
+ * 
+ * Fornece funcionalidades completas para gerenciar a lista de contatos, incluindo:
+ * - Busca com debounce
+ * - Ordenação por diferentes campos
+ * - Paginação
+ * - Estado de carregamento
+ * - Refresh de dados
+ * 
+ * @returns Objeto com estados e funções para gerenciar contatos
+ */
 export function useContacts() {
-  // Filtros e paginação
   const [q, setQ] = useState('')
-  const qDeb = useDebounce(q, 400)
+  const qDeb = useDebounce(q, 400) // Busca com debounce
   const [sort, setSort] = useState<SortField>('name')
   const [dir, setDir] = useState<SortDir>('asc')
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(10)
 
-  // Dados e estado de carregamento
   const [rows, setRows] = useState<Contact[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -41,11 +51,8 @@ export function useContacts() {
   const totalPages = Math.max(1, Math.ceil(total / perPage))
 
   return {
-    // filtros/paginação
     q, setQ, sort, setSort, dir, setDir, page, setPage, perPage, setPerPage,
-    // dados
     rows, setRows, total, totalPages, loading,
-    // ações
     fetchData, reset,
   }
 }
