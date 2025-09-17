@@ -22,8 +22,9 @@ export default function ResetPasswordPage() {
             await api.post('/reset-password', { token, email, password, password_confirmation }, false)
             setOk('Senha alterada com sucesso!')
             setTimeout(() => nav('/login', { replace: true }), 800)
-        } catch (e: any) {
-            setErr(e?.detail?.message || 'Não foi possível redefinir a senha')
+        } catch (e: unknown) {
+            const error = e as { detail?: { message?: string } };
+            setErr(error?.detail?.message || 'Não foi possível redefinir a senha');
         } finally { setLoading(false) }
     }
 

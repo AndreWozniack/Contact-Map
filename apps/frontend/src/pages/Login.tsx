@@ -2,14 +2,14 @@ import { useState } from 'react';
 import {
     Alert, Box, Button, Container, Stack, TextField, Typography, Link, CircularProgress
 } from '@mui/material';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from "../hooks/useAuth";
 import { useLocation, useNavigate } from 'react-router-dom';
 import Center from "../components/Center.tsx";
 
 export default function LoginPage() {
     const { login } = useAuth();
     const nav = useNavigate();
-    const location = useLocation() as any;
+    const location = useLocation();
     const from = location.state?.from?.pathname ?? '/contacts';
 
     const [email, setEmail] = useState('');
@@ -24,8 +24,9 @@ export default function LoginPage() {
         try {
             await login(email, password);
             nav(from, { replace: true });
-        } catch (e: any) {
-            setErr(e?.detail?.message || 'Credenciais inválidas');
+        } catch (e: unknown) {
+            const error = e as { detail?: { message?: string } };
+            setErr(error?.detail?.message || 'Credenciais inválidas');
         } finally {
             setLoading(false);
         }

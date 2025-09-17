@@ -1,7 +1,7 @@
 import { type ReactNode } from 'react'
 import { LinearProgress } from '@mui/material'
 import { Navigate, useLocation } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from "../hooks/useAuth";
 
 type Props = { children: ReactNode }
 

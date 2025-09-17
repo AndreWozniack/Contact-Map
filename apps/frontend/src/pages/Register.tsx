@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { Alert, Box, Button, Stack, TextField, Typography, CircularProgress, Link } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from "../hooks/useAuth";
 import Center from "../components/Center.tsx";
+import type { User } from "../contexts/auth-context";
 
 export default function RegisterPage() {
     const nav = useNavigate()
@@ -18,13 +19,13 @@ export default function RegisterPage() {
         e.preventDefault()
         setErr(null); setLoading(true)
         try {
-            // /api/register retorna { token, user }
-            const r = await api.post<{ token: string; user: any }>('/register', form, false)
+            const r = await api.post<{ token: string; user: User }>('/register', form, false)
             localStorage.setItem('token', r.token)
             await login(form.email, form.password) // garante contexto preenchido
             nav('/contacts', { replace: true })
-        } catch (e: any) {
-            setErr(e?.detail?.message || 'Falha ao cadastrar')
+        } catch (e: unknown) {
+            const error = e as { detail?: { message?: string } };
+            setErr(error?.detail?.message || 'Falha ao criar conta');
         } finally { setLoading(false) }
     }
 
