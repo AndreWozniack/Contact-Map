@@ -6,8 +6,24 @@ use App\Models\Contact;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
+/**
+ * Seeder principal do banco de dados
+ * 
+ * Este seeder cria dados de exemplo para desenvolvimento e testes,
+ * incluindo um usuário de demonstração e vários contatos com
+ * endereços reais de Curitiba-PR.
+ */
 class DatabaseSeeder extends Seeder
 {
+    /**
+     * Executa o seeding do banco de dados
+     * 
+     * Cria um usuário de demonstração e uma coleção de contatos
+     * com dados realísticos para facilitar o desenvolvimento
+     * e demonstração da aplicação.
+     * 
+     * @return void
+     */
     public function run(): void
     {
         $user = User::factory()->create([
