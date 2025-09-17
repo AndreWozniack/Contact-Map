@@ -7,6 +7,12 @@ import ContactsPage from './pages/Contacts'
 import RequireAuth from './components/RequireAuth'
 import TestMap from "./pages/TestMap.tsx";
 
+/**
+ * Componente principal da aplicação
+ * 
+ * Define as rotas da aplicação usando React Router,
+ * incluindo proteção de rotas que requerem autenticação.
+ */
 export default function App() {
     return (
         <Routes>
