@@ -36,6 +36,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
     }
 
-    const value = useMemo(() => ({ user, token, ready, login, logout }), [user, token, ready]);
+    async function deleteCount(params: { id: string }) {
+        await api.del(`/contacts/${params.id}`);
+    }
+
+    const value = useMemo(() => ({ user, token, ready, login, logout, deleteCount }), [user, token, ready]);
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

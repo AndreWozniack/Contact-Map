@@ -8,6 +8,7 @@ export type AuthContextType = {
     ready: boolean;
     login: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
+    deleteCount: (params: { id: string }) => Promise<void>;
 };
 
 export const AuthContext = createContext<AuthContextType | null>(null);

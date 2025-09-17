@@ -26,7 +26,9 @@ export default function LoginPage() {
             nav(from, { replace: true });
         } catch (e: unknown) {
             const error = e as { detail?: { message?: string } };
-            setErr(error?.detail?.message || 'Credenciais inválidas');
+            if (error?.detail?.message === 'Invalid credentials') setErr('Credenciais inválidas');
+            if (error?.detail?.message === 'These credentials do not match our records.') setErr('Essas credenciais não correspondem aos nossos registros.');
+            if (!error?.detail?.message) setErr('Não foi possível fazer login');
         } finally {
             setLoading(false);
         }

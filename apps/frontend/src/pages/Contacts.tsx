@@ -37,6 +37,14 @@ import { useContacts } from "../hooks/useContacts";
 import { useSelectedContact } from "../hooks/useSelectedContact.ts";
 import { useClipboard } from "../hooks/useClipboard";
 
+import Menu from "@mui/material/Menu";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Alert from "@mui/material/Alert";
+
+
 export default function ContactsPage() {
   const { user, logout } = useAuth();
 
@@ -67,6 +75,23 @@ export default function ContactsPage() {
   const [editing, setEditing] = useState<Contact | null>(null);
   const [openNew, setOpenNew] = useState(false);
 
+  const [settingsEl, setSettingsEl] = useState<null | HTMLElement>(null);
+  const openSettings = Boolean(settingsEl);
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pwd, setPwd] = useState('');
+  const [deleting, setDelering] = useState(false);
+  const [delErr, setDelErr] = useState<string | null>(null);
+
+
+  function handleOpenSettings(event: React.MouseEvent<HTMLElement>) {
+    setSettingsEl(event.currentTarget);
+  }
+
+  function handleCloseSettings() {
+    setSettingsEl(null);
+  }
+
   function handleEdit(c: Contact) {
     setEditing(c);
   }
@@ -77,8 +102,21 @@ export default function ContactsPage() {
     await api.del<void>(`/contacts/${c.id}`);
     setRows((prev) => prev.filter((r) => r.id !== c.id));
     if (selectedId === c.id) setSelectedId(null);
-    // TODO: Snackbar “Contato apagado”
-    
+    // TODO: Snackbar “Contato apagado” 
+  }
+
+  async function handleConfirmDelete() {
+    setDelErr(null);
+    setDelering(true);
+    try {
+      await api.del('/account', { password: pwd });
+      await logout();
+    } catch (error: unknown) {
+      const err = error as { detail?: { message?: string } };
+      setDelErr(err?.detail?.message || 'Senha inválida ou erro ao excluir a conta.');
+    } finally {
+      setDelering(false);
+    }
   }
 
   return (
@@ -95,8 +133,25 @@ export default function ContactsPage() {
           <Typography variant="h4" sx={{ flex: 1, fontWeight: 700 }}>
             Contatos
           </Typography>
-          <IconButton onClick={logout} aria-label="Sair" color="inherit">
+          <IconButton onClick={handleOpenSettings} aria-label="Configurações" color="inherit">
             <SettingsIcon />
+            <Menu
+              anchorEl={settingsEl}
+              open={openSettings}
+              onClose={handleCloseSettings}
+              anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+              transformOrigin={{ vertical: "top", horizontal: "right" }}
+            >
+              <MenuItem
+                onClick={() => {
+                  handleCloseSettings();
+                  setConfirmOpen(true);
+                }}
+                sx={{ color: "error.main", fontWeight: 600 }}
+              >
+                Excluir minha conta
+              </MenuItem>
+            </Menu>
           </IconButton>
           <Divider flexItem orientation="vertical" sx={{ mx: 0.5 }} />
           <Typography color="text.secondary" sx={{ mr: 1 }}>
@@ -106,6 +161,7 @@ export default function ContactsPage() {
             <LogoutIcon />
           </IconButton>
         </Toolbar>
+
       </AppBar>
 
       <Container
@@ -125,7 +181,7 @@ export default function ContactsPage() {
             alignItems: "stretch",
           }}
         >
-        {/* Lista de contatos e filtros */}
+          {/* Lista de contatos e filtros */}
           <Box
             sx={{
               height: "100%",
@@ -301,14 +357,14 @@ export default function ContactsPage() {
                   contacts={rows}
                   focus={
                     selected &&
-                    typeof selected.lat === "number" &&
-                    typeof selected.lng === "number"
+                      typeof selected.lat === "number" &&
+                      typeof selected.lng === "number"
                       ? {
-                          id: selected.id,
-                          name: selected.name,
-                          lat: selected.lat!,
-                          lng: selected.lng!,
-                        }
+                        id: selected.id,
+                        name: selected.name,
+                        lat: selected.lat!,
+                        lng: selected.lng!,
+                      }
                       : null
                   }
                   height="100%"
@@ -326,6 +382,40 @@ export default function ContactsPage() {
         message="Copiado!"
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       />
+      <Dialog open={confirmOpen} onClose={() => !deleting && setConfirmOpen(false)}>
+        <DialogTitle>Excluir conta</DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <Typography sx={{ mb: 2 }}>
+            Essa ação é irreversível. Para confirmar, digite sua senha.
+          </Typography>
+
+          {delErr && <Alert severity="error" sx={{ mb: 2 }}>{delErr}</Alert>}
+
+          <TextField
+            label="Senha"
+            type="password"
+            value={pwd}
+            onChange={(e) => setPwd(e.target.value)}
+            fullWidth
+            autoFocus
+            disabled={deleting}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setConfirmOpen(false)} disabled={deleting}>
+            Cancelar
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleConfirmDelete}
+            disabled={!pwd || deleting}
+          >
+            {deleting ? "Excluindo..." : "Excluir conta"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
     </Box>
   );
 }
