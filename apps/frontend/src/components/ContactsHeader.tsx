@@ -1,6 +1,6 @@
 import { AppBar, Toolbar, Typography, IconButton, Divider } from '@mui/material'
 import LogoutIcon from '@mui/icons-material/Logout'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from "../hooks/useAuth";
 
 export default function ContactsHeader() {
     const { user, logout } = useAuth()

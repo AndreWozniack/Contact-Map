@@ -28,6 +28,18 @@ const UFS = [
   "AC", "AL", "AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RO","RS","RR","SC","SP","SE","TO",
 ];
 
+/**
+ * Dialog para criação e edição de contatos
+ * 
+ * Fornece formulário completo para cadastro/edição de contatos, incluindo:
+ * - Dados pessoais (nome, CPF, telefone)
+ * - Endereço com busca automática por CEP
+ * - Validação de campos obrigatórios
+ * - Máscaras de entrada para CPF, CEP e telefone
+ * 
+ * @param props Propriedades do componente
+ * @returns Dialog modal com formulário de contato
+ */
 export default function ContactDialog({
   open,
   contact,
@@ -138,7 +150,7 @@ export default function ContactDialog({
         setCepLoading(false);
       }
     },
-    [isEdit]
+    []
   );
 
   useEffect(() => {

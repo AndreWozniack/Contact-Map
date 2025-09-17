@@ -5,12 +5,26 @@ namespace App\Rules;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 
+/**
+ * Regra de validação para CPF brasileiro
+ * 
+ * Esta classe implementa a validação completa de CPF,
+ * incluindo verificação de formato, dígitos verificadores
+ * e rejeição de CPFs com todos os dígitos iguais.
+ */
 class Cpf implements ValidationRule
 {
     /**
-     * Run the validation rule.
-     *
-     * @param  \Closure(string, ?string=): \Illuminate\Translation\PotentiallyTranslatedString  $fail
+     * Executa a validação do CPF
+     * 
+     * Valida se o CPF fornecido está em formato correto,
+     * possui exatamente 11 dígitos, não é uma sequência
+     * repetida e tem dígitos verificadores válidos.
+     * 
+     * @param string $attribute Nome do atributo sendo validado
+     * @param mixed $value Valor a ser validado
+     * @param Closure $fail Função para reportar falha na validação
+     * @return void
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {

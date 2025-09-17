@@ -19,6 +19,7 @@ import {
   TextField,
   Divider,
   Snackbar,
+  Menu,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
@@ -37,14 +38,24 @@ import { useContacts } from "../hooks/useContacts";
 import { useSelectedContact } from "../hooks/useSelectedContact.ts";
 import { useClipboard } from "../hooks/useClipboard";
 
-import Menu from "@mui/material/Menu";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import Alert from "@mui/material/Alert";
 
-
+/**
+ * Página principal de gerenciamento de contatos
+ * 
+ * Interface principal da aplicação onde usuários podem:
+ * - Visualizar lista de contatos com busca e filtros
+ * - Ver contatos em mapa interativo
+ * - Adicionar, editar e excluir contatos
+ * - Gerenciar dados do perfil
+ * - Fazer logout da aplicação
+ * 
+ * @returns Componente da página de contatos
+ */
 export default function ContactsPage() {
   const { user, logout } = useAuth();
 
@@ -135,24 +146,24 @@ export default function ContactsPage() {
           </Typography>
           <IconButton onClick={handleOpenSettings} aria-label="Configurações" color="inherit">
             <SettingsIcon />
-            <Menu
-              anchorEl={settingsEl}
-              open={openSettings}
-              onClose={handleCloseSettings}
-              anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-              transformOrigin={{ vertical: "top", horizontal: "right" }}
-            >
-              <MenuItem
-                onClick={() => {
-                  handleCloseSettings();
-                  setConfirmOpen(true);
-                }}
-                sx={{ color: "error.main", fontWeight: 600 }}
-              >
-                Excluir minha conta
-              </MenuItem>
-            </Menu>
           </IconButton>
+          <Menu
+            anchorEl={settingsEl}
+            open={openSettings}
+            onClose={handleCloseSettings}
+            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+            transformOrigin={{ vertical: "top", horizontal: "right" }}
+          >
+            <MenuItem
+              onClick={() => {
+                handleCloseSettings();
+                setConfirmOpen(true);
+              }}
+              sx={{ color: "error.main", fontWeight: 600 }}
+            >
+              Excluir minha conta
+            </MenuItem>
+          </Menu>
           <Divider flexItem orientation="vertical" sx={{ mx: 0.5 }} />
           <Typography color="text.secondary" sx={{ mr: 1 }}>
             {user?.name}

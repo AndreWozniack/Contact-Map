@@ -1,3 +1,10 @@
+/**
+ * Definições de tipos para a aplicação
+ */
+
+/**
+ * Representa um contato no sistema
+ */
 export type Contact = {
     id: number
     name: string
@@ -14,6 +21,9 @@ export type Contact = {
     phone: string
 }
 
+/**
+ * Estrutura de paginação para listas de dados
+ */
 export type Page<T> = { 
     data: T[]
     total: number

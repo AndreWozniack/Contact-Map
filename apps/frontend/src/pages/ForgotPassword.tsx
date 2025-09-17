@@ -3,22 +3,39 @@ import { Alert, Box, Button, Stack, TextField, Typography, CircularProgress, Lin
 import { api } from '../lib/api'
 import Center from "../components/Center.tsx";
 
+/**
+ * Página de Recuperação de Senha
+ * 
+ * Permite que usuários solicitem um link de redefinição de senha
+ * via email. Envia requisição para o backend que cuidará do envio
+ * do email com instruções de reset.
+ * 
+ * @returns Componente da página de recuperação de senha
+ */
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState('')
     const [ok, setOk] = useState<string | null>(null)
     const [err, setErr] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
 
+    /**
+     * Manipula o envio do formulário de recuperação
+     * 
+     * @param e Evento do formulário
+     */
     async function onSubmit(e: React.FormEvent) {
         e.preventDefault()
         setErr(null); setOk(null); setLoading(true)
+        
         try {
             await api.post('/forgot-password', { email }, false)
             setOk('Enviamos um e-mail com as instruções para redefinir sua senha.')
         } catch (e: unknown) {
             const error = e as { detail?: { message?: string } };
             setErr(error?.detail?.message || 'Não foi possível enviar o e-mail');
-        } finally { setLoading(false) }
+        } finally { 
+            setLoading(false) 
+        }
     }
 
     return (

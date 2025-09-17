@@ -5,9 +5,25 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
+/**
+ * Controlador responsável por operações de gerenciamento de conta
+ * 
+ * Este controlador gerencia operações críticas da conta do usuário,
+ * como exclusão permanente da conta.
+ */
 class AccountController extends Controller
 {
-    public function destroy(Request $request){
+    /**
+     * Remove permanentemente a conta do usuário autenticado
+     * 
+     * Valida a senha antes de proceder com a exclusão da conta,
+     * remove todos os tokens de acesso e exclui o usuário do sistema.
+     * 
+     * @param Request $request Requisição HTTP contendo a senha de confirmação
+     * @return \Illuminate\Http\JsonResponse Confirmação da exclusão ou erro de validação
+     */
+    public function destroy(Request $request)
+    {
         $data = $request->validate([
             'password' => ['required', 'string'],
         ]);

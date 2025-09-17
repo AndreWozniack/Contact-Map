@@ -4,28 +4,51 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import Center from "../components/Center.tsx";
 
+/**
+ * Página de Redefinição de Senha
+ * 
+ * Permite que usuários redefinam sua senha usando um token de reset
+ * enviado por email. Extrai o token da URL e o email dos parâmetros
+ * de busca, permitindo que o usuário defina uma nova senha.
+ * 
+ * @returns Componente da página de reset de senha
+ */
 export default function ResetPasswordPage() {
     const nav = useNavigate()
     const { token = '' } = useParams()
     const [sp] = useSearchParams()
     const email = useMemo(() => sp.get('email') || '', [sp])
+
     const [password, setPass] = useState('')
     const [password_confirmation, setConf] = useState('')
     const [err, setErr] = useState<string | null>(null)
     const [ok, setOk] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
 
+    /**
+     * Manipula o envio do formulário de redefinição
+     * 
+     * @param e Evento do formulário
+     */
     async function onSubmit(e: React.FormEvent) {
         e.preventDefault()
         setErr(null); setOk(null); setLoading(true)
+        
         try {
-            await api.post('/reset-password', { token, email, password, password_confirmation }, false)
+            await api.post('/reset-password', { 
+                token, 
+                email, 
+                password, 
+                password_confirmation 
+            }, false)
             setOk('Senha alterada com sucesso!')
             setTimeout(() => nav('/login', { replace: true }), 800)
         } catch (e: unknown) {
             const error = e as { detail?: { message?: string } };
             setErr(error?.detail?.message || 'Não foi possível redefinir a senha');
-        } finally { setLoading(false) }
+        } finally { 
+            setLoading(false) 
+        }
     }
 
     return (
