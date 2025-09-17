@@ -181,7 +181,7 @@ function smoothPanZoom(
     const ease = opts?.ease ?? ((t: number) => t);
 
     const start = map.getCenter()!;
-    const startZoom = map.getZoom() ?? 5;
+    const startZoom = map.getZoom() ?? 14;
 
     const from = { lat: start.lat(), lng: start.lng() };
     const to = target;
