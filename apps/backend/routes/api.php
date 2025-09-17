@@ -22,5 +22,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/contacts/{id}',  [ContactController::class,'destroy']);
 
     Route::get   ('/address/search', [AddressController::class,'search']);
+    Route::get   ('/address/',       [AddressController::class,'byCep']);
     Route::delete('/account',        [AccountController::class,'destroy']);
 });

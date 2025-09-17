@@ -10,8 +10,13 @@ class Contact extends Model
 {
     use HasFactory;
 
+    protected $casts = ['lat' => 'float', 'lng' => 'float'];
+
     protected $fillable = [
-        'name','cpf','phone','cep','state','city','street','number','complement','lat','lng'
+        'user_id',
+        'name','cpf','phone',
+        'cep','state','city','street','number','complement',
+        'lat','lng',
     ];
 
     public function user():BelongsTo
