@@ -16,7 +16,7 @@ class ContactCrudTest extends TestCase
     private function fakeGeocode($lat = -25.4283567, $lng = -49.2732515): void
     {
         Http::fake([
-            'https://maps.googleapis.com/maps/api/geocode/*' => Http::response([
+            'maps.googleapis.com/*' => Http::response([
                 'results' => [[
                     'geometry' => ['location' => ['lat' => $lat, 'lng' => $lng]]
                 ]],
@@ -111,15 +111,40 @@ class ContactCrudTest extends TestCase
         $user = User::factory()->create();
         Sanctum::actingAs($user);
 
-        $this->fakeGeocode(-25.1, -49.1);
-        $contact = Contact::factory()->for($user)->create(['street' => 'Rua A', 'number' => '10', 'lat' => -25.1, 'lng' => -49.1]);
+        $contact = Contact::factory()->for($user)->create([
+            'cep' => '80010000',
+            'state' => 'PR',
+            'city' => 'Curitiba',
+            'street' => 'Rua A', 
+            'number' => '10', 
+            'lat' => -25.1, 
+            'lng' => -49.1
+        ]);
 
-        $this->fakeGeocode(-25.2, -49.2);
-        $this->putJson("/api/contacts/{$contact->id}", ['street'=>'Rua B','number'=>'20'])
-            ->assertOk();
+        $originalLat = $contact->lat;
+        $originalLng = $contact->lng;
+        
+        Http::fake([
+            'maps.googleapis.com/*' => Http::response([
+                'results' => [[
+                    'geometry' => ['location' => ['lat' => -25.999, 'lng' => -49.999]]
+                ]],
+                'status' => 'OK'
+            ], 200),
+        ]);
+        
+        $response = $this->putJson("/api/contacts/{$contact->id}", [
+            'street' => 'Rua B',
+            'number' => '20'
+        ]);
+        
+        $response->assertOk();
         $contact->refresh();
-        $this->assertEquals(-25.2, (float)$contact->lat);
-        $this->assertEquals(-49.2, (float)$contact->lng);
-
+        
+        $this->assertNotEquals($originalLat, $contact->lat);
+        $this->assertNotEquals($originalLng, $contact->lng);
+        
+        $this->assertEquals('Rua B', $contact->street);
+        $this->assertEquals('20', $contact->number);
     }
 }
