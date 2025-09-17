@@ -9,8 +9,21 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Controlador responsável pelo gerenciamento de contatos
+ * 
+ * Este controlador implementa operações CRUD para contatos,
+ * incluindo funcionalidades de busca, paginação e geocodificação
+ * automática de endereços usando a API do Google Maps.
+ */
 class ContactController extends Controller
 {
+    /**
+     * Lista os contatos do usuário autenticado com filtros e paginação
+     * 
+     * @param Request $request Requisição HTTP contendo parâmetros de busca e ordenação
+     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator Lista paginada de contatos
+     */
     public function index(Request $request)
     {
         $query = Contact::query()->where('user_id', $request->user()->id);
@@ -19,7 +32,7 @@ class ContactController extends Controller
         if ($term !== '') {
             $query->where(function ($w) use ($term) {
                 $w->whereRaw('LOWER(name) LIKE ?', ["%{$term}%"])
-                    ->orWhereRaw('cpf LIKE ?', ["%{$term}%"]); // cpf é numérico, LOWER não muda
+                    ->orWhereRaw('cpf LIKE ?', ["%{$term}%"]);
             });
         }
 
@@ -34,7 +47,12 @@ class ContactController extends Controller
         return $query->orderBy($sort, $dir)->paginate($per);
     }
 
-
+    /**
+     * Cria um novo contato para o usuário autenticado
+     * 
+     * @param Request $request Requisição HTTP contendo os dados do contato
+     * @return \Illuminate\Http\JsonResponse Contato criado com coordenadas geocodificadas
+     */
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -65,12 +83,28 @@ class ContactController extends Controller
         return response()->json($contact, 201);
     }
 
+    /**
+     * Exibe um contato específico do usuário autenticado
+     * 
+     * @param Request $request Requisição HTTP
+     * @param int $id ID do contato a ser exibido
+     * @return Contact Contato encontrado
+     */
     public function show(Request $request, int $id)
     {
         $c = Contact::where('user_id', $request->user()->id)->findOrFail($id);
         return $c;
     }
 
+    /**
+     * Atualiza um contato existente do usuário autenticado
+     * 
+     * Realiza geocodificação automática quando dados de endereço são alterados.
+     * 
+     * @param Request $request Requisição HTTP contendo dados atualizados
+     * @param int $id ID do contato a ser atualizado
+     * @return Contact Contato atualizado
+     */
     public function update(Request $request, int $id)
     {
         $c = Contact::where('user_id', $request->user()->id)->findOrFail($id);
@@ -113,7 +147,13 @@ class ContactController extends Controller
         return $c->fresh();
     }
 
-
+    /**
+     * Remove um contato do usuário autenticado
+     * 
+     * @param Request $request Requisição HTTP
+     * @param int $id ID do contato a ser removido
+     * @return \Illuminate\Http\Response Resposta vazia com status 204
+     */
     public function destroy(Request $request, int $id)
     {
         $c = Contact::where('user_id', $request->user()->id)->findOrFail($id);
@@ -121,17 +161,43 @@ class ContactController extends Controller
         return response()->noContent();
     }
 
+    /**
+     * Geocodifica um endereço usando a API do Google Maps
+     * 
+     * @param array $addr Array associativo contendo dados do endereço
+     * @return array Array com latitude e longitude [lat, lng]
+     * @throws \Illuminate\Http\Exceptions\HttpResponseException Em caso de erro na geocodificação
+     */
     private function geocode(array $addr): array
     {
         $address = "{$addr['street']}, {$addr['number']}, {$addr['city']} - {$addr['state']}, {$addr['cep']}";
-        $resp = Http::get('https://maps.googleapis.com/maps/api/geocode/json', [
-            'address' => $address,
-            'key'     => config('services.google.maps_key'),
-            'region'  => 'br',
-        ])->json();
+        
+        try {
+            $response = Http::timeout(8)->retry(2, 200)->get('https://maps.googleapis.com/maps/api/geocode/json', [
+                'address' => $address,
+                'key'     => config('services.google.maps_key'),
+                'region'  => 'br',
+            ]);
+            
+            $resp = $response->json();
+        } catch (\Exception $e) {
+            abort(503, 'Erro ao consultar serviço de geocodificação. Tente novamente.');
+        }
+
+        if (($resp['status'] ?? '') !== 'OK') {
+            $errorMessage = match($resp['status'] ?? '') {
+                'ZERO_RESULTS' => 'Endereço não encontrado para geocodificação.',
+                'OVER_QUERY_LIMIT' => 'Limite de consultas excedido. Tente novamente mais tarde.',
+                'REQUEST_DENIED' => 'Acesso negado ao serviço de geocodificação.',
+                'INVALID_REQUEST' => 'Requisição inválida para geocodificação.',
+                default => 'Erro no serviço de geocodificação: ' . ($resp['error_message'] ?? 'Erro desconhecido')
+            };
+            abort(422, $errorMessage);
+        }
 
         $loc = $resp['results'][0]['geometry']['location'] ?? null;
-        abort_unless($loc, 422, 'Não foi possível geocodificar o endereço.');
+        abort_unless($loc, 422, 'Não foi possível obter coordenadas do endereço.');
+        
         return [round($loc['lat'], 7), round($loc['lng'], 7)];
     }
 }
