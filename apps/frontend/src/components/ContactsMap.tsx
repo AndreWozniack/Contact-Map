@@ -14,8 +14,8 @@ type Contact = {
 type Focus = { id: number; name: string; lat: number; lng: number }
 
 export default function ContactsMap({
-                                        contacts, height = '100%', width = '100%', focus = null,
-                                    }: {
+    contacts, height = '100%', width = '100%', focus = null,
+}: {
     contacts: Contact[]
     height?: number | string
     width?: number | string
@@ -38,7 +38,6 @@ export default function ContactsMap({
             }))
     ), [contacts])
 
-    // qual InfoWindow está aberto
     const [activeId, setActiveId] = useState<number|null>(null)
     useEffect(() => { setActiveId(focus?.id ?? null) }, [focus?.id])
 
@@ -49,7 +48,7 @@ export default function ContactsMap({
                     id="contacts-map"
                     mapId={mapId}
                     defaultCenter={markers[0] ? markers[0].pos : { lat: -25.4284, lng: -49.2733 }}
-                    defaultZoom={markers[0] ? 12 : 5}
+                    defaultZoom={markers[0] ? 16 : 5}
                     style={{ width: '100%', height: '100%' }}
                     disableDefaultUI
                 >
@@ -80,7 +79,7 @@ export default function ContactsMap({
                         return (
                             <InfoWindow position={m.pos} onCloseClick={() => setActiveId(null)}>
                                 <div style={{ minWidth: 220 }}>
-                                    <div style={{ fontWeight: 700, marginBottom: 4 }}>{m.name}</div>
+                                    <div style={{ fontWeight: 700, marginBottom: 2 }}>{m.name}</div>
                                     {m.address && <div style={{ fontSize: 12, color: '#555' }}>{m.address}</div>}
                                     {m.phone && <div style={{ fontSize: 12, marginTop: 4 }}>📞 {m.phone}</div>}
                                     <div style={{ marginTop: 8 }}>
@@ -115,7 +114,7 @@ function FitOrPan({
 
         if (focus) {
             map.panTo({ lat: focus.lat, lng: focus.lng })
-            map.setZoom(15)
+            map.setZoom(16)
             const sidebar = window.innerWidth >= 900 ? 420 : 0
             if (sidebar) map.panBy(Math.floor(sidebar / 2), 0)
             return
