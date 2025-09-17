@@ -1,21 +1,24 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     TextField, Stack, Button, MenuItem, InputAdornment, CircularProgress
 } from '@mui/material'
 import { api } from '../lib/api'
 import { maskCPF, maskCEP, maskPhone, onlyDigits } from '../lib/masks'
+import { useDebounce } from '../lib/useDebounce'
 import AddressAutocomplete from './AddressAutocomplete'
+import type { Contact } from '../types'
 
 type Props = {
     open: boolean
+    contact: Contact | null
     onClose: () => void
-    onSaved: (created: any) => void
+    onSaved: (contact: Contact) => void
 }
 
 const UFS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RO','RS','RR','SC','SP','SE','TO']
 
-export default function ContactDialog({ open, onClose, onSaved }: Props){
+export default function ContactDialog({ open, contact, onClose, onSaved }: Props){
     const [submitting, setSubmitting] = useState(false)
     const [cepLoading, setCepLoading] = useState(false)
 
@@ -24,8 +27,12 @@ export default function ContactDialog({ open, onClose, onSaved }: Props){
         cep:'', state:'PR', city:'', street:'',
         number:'', complement:''
     })
+
     const [err, setErr] = useState<Record<string,string>>({})
     const numberRef = useRef<HTMLInputElement>(null)
+    const lastFetchedCepRef = useRef<string>('')
+
+    const isEdit = !!contact
 
     function set<K extends keyof typeof f>(k: K, v: string){
         setF(s => ({ ...s, [k]: v }))
@@ -41,42 +48,71 @@ export default function ContactDialog({ open, onClose, onSaved }: Props){
     }
 
     useEffect(() => {
-        const digits = onlyDigits(f.cep)
-
-        if (digits.length !== 8) {
-            setCepLoading(false)
+        if (!open) return
+        
+        // Resetar o controle de CEP quando abrir o dialog
+        lastFetchedCepRef.current = ''
+        
+        if (!contact) {
+            setF({
+                name:'', cpf:'', phone:'',
+                cep:'', state:'PR', city:'', street:'',
+                number:'', complement:''
+            })
+            setErr({})
             return
         }
+        setF({
+            name: contact.name,
+            cpf: maskCPF(contact.cpf),
+            phone: maskPhone(contact.phone || ''),
+            cep: maskCEP(contact.cep || ''),
+            state: contact.state || 'PR',
+            city: contact.city || '',
+            street: contact.street || '',
+            number: contact.number || '',
+            complement: contact.complement || ''
+        })
+        setErr({})
+    }, [open, contact])
 
-        let cancelled = false
-        ;(async () => {
-            try {
-                setCepLoading(true)
-                const resp = await api.get<{ address: {
-                        cep: string; state: string; city: string; street: string; district?: string;
-                    } }>(`/address?cep=${digits}`)
+    // Debounce do CEP para evitar muitas requisições
+    const debouncedCep = useDebounce(f.cep, 500)
 
-                if (cancelled) return
-                const a = resp.address
-
-                setErr(prev => ({ ...prev, cep: '' }))
-                setF(s => ({
-                    ...s,
-                    state: a.state || s.state,
-                    city:  a.city  || s.city,
-                    street: a.street || s.street,
-                    complement: s.complement || a.district || '',
-                    cep: maskCEP(a.cep || digits),
+    const fetchCEP = useCallback(async (cep: string) => {
+        setCepLoading(true)
+        lastFetchedCepRef.current = cep
+        try {
+            const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
+            const data = await response.json()
+            
+            if (!data.erro) {
+                setF(prev => ({
+                    ...prev,
+                    street: data.logradouro || prev.street,
+                    city: data.localidade || prev.city,
+                    state: data.uf || prev.state,
+                    complement: prev.complement || data.bairro || prev.complement
                 }))
-            } catch {
-                if (!cancelled) setErr(prev => ({ ...prev, cep: 'CEP não encontrado' }))
-            } finally {
-                if (!cancelled) setCepLoading(false)
+                // Focar no campo número apenas se os dados foram preenchidos e for um novo contato
+                if (data.logradouro && !isEdit) {
+                    setTimeout(() => numberRef.current?.focus(), 100)
+                }
             }
-        })()
+        } catch (error) {
+            console.error('Erro ao buscar CEP:', error)
+        } finally {
+            setCepLoading(false)
+        }
+    }, [isEdit])
 
-        return () => { cancelled = true }
-    }, [f.cep])
+    // Buscar CEP automaticamente quando estiver completo (8 dígitos)
+    useEffect(() => {
+        const cepDigits = onlyDigits(debouncedCep)
+        if (cepDigits.length === 8 && !cepLoading && cepDigits !== lastFetchedCepRef.current) {
+            fetchCEP(cepDigits)
+        }
+    }, [debouncedCep, cepLoading, fetchCEP])
 
 
     async function handleSubmit(){
@@ -88,12 +124,17 @@ export default function ContactDialog({ open, onClose, onSaved }: Props){
                 cep:   onlyDigits(f.cep),
                 phone: onlyDigits(f.phone),
             }
-            const created = await api.post('/contacts', payload)
-            onSaved(created)
-            resetAll()
+            const saved = isEdit
+                ? await api.put<Contact>(`/contacts/${contact!.id}`, payload)
+                : await api.post<Contact>('/contacts', payload)
+
+            onSaved(saved)
+            if (isEdit) resetAll()
             onClose()
-        } catch (e: any) {
-            const detail = e?.detail
+
+        } catch (e: unknown) {
+            const error = e as { detail?: { errors?: Record<string, string[]> } }
+            const detail = error?.detail
             const bag = detail?.errors || {}
             const flat: Record<string,string> = {}
             Object.keys(bag).forEach(k => flat[k] = String(bag[k][0]))
@@ -104,8 +145,8 @@ export default function ContactDialog({ open, onClose, onSaved }: Props){
     }
 
     return (
-        <Dialog open={open} onClose={() => { resetAll(); onClose() }} fullWidth maxWidth="sm">
-            <DialogTitle>Novo contato</DialogTitle>
+        <Dialog open={open} onClose={() => { if(!isEdit) resetAll(); onClose() }} fullWidth maxWidth="sm">
+            <DialogTitle>{isEdit? 'Editar Contato': 'Novo Contato'}</DialogTitle>
 
             <DialogContent>
                 <Stack spacing={1.5} sx={{ mt: 1 }}>
