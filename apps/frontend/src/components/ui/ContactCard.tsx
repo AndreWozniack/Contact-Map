@@ -2,7 +2,7 @@ import { alpha } from '@mui/material/styles'
 import { Avatar, Box, Stack, Typography, Paper, IconButton, Menu, MenuItem } from '@mui/material'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import React, { useState } from 'react'
-import type { Contact } from '../types'
+import type { Contact } from '../../types'
 
 type Props = {
     name: string

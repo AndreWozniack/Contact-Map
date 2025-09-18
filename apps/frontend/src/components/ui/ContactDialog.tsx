@@ -11,11 +11,11 @@ import {
   InputAdornment,
   CircularProgress,
 } from "@mui/material";
-import { api } from "../lib/api";
-import { maskCPF, maskCEP, maskPhone, onlyDigits } from "../lib/masks";
-import { useDebounce } from "../lib/useDebounce";
+import { api } from "../../lib/api";
+import { maskCPF, maskCEP, maskPhone, onlyDigits } from "../../lib/masks";
+import { useDebounce } from "../../lib/useDebounce";
 import AddressAutocomplete from "./AddressAutocomplete";
-import type { Contact } from "../types";
+import type { Contact } from "../../types";
 
 type Props = {
   open: boolean;

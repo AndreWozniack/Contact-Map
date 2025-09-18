@@ -4,7 +4,7 @@ import RegisterPage from './pages/Register'
 import ForgotPasswordPage from './pages/ForgotPassword'
 import ResetPasswordPage from './pages/ResetPassword'
 import ContactsPage from './pages/Contacts'
-import RequireAuth from './components/RequireAuth'
+import RequireAuth from './components/auth/RequireAuth'
 
 /**
  * Componente principal da aplicação

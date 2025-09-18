@@ -3,7 +3,7 @@ import SearchIcon from '@mui/icons-material/Search'
 import AddIcon from '@mui/icons-material/Add'
 
 /**
- * Propriedades do componente ContactsSearchBar
+ * Propriedades do componente SearchBar
  */
 type Props = {
     searchValue: string
@@ -27,7 +27,7 @@ type Props = {
  * @param props - Propriedades do componente
  * @returns Componente da barra de pesquisa
  */
-export default function ContactsSearchBar({ searchValue, onSearchChange, onNewContact, onPageChange }: Props) {
+export default function SearchBar({ searchValue, onSearchChange, onNewContact, onPageChange }: Props) {
     return (
         <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
             <TextField

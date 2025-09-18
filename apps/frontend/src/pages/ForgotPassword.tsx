@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Alert, Box, Button, Stack, TextField, Typography, CircularProgress, Link } from '@mui/material'
 import { api } from '../lib/api'
-import Center from "../components/Center.tsx";
+import Center from '../components/ui/Center'
 
 /**
  * Página de Recuperação de Senha

@@ -13,7 +13,7 @@ type Props = {
     onPageChange: (page: number) => void
 }
 
-export default function ContactsFilters({
+export default function Filters({
     sort,
     dir,
     perPage,

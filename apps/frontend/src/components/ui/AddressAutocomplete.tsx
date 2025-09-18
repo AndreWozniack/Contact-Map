@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Autocomplete, TextField, CircularProgress } from '@mui/material'
-import { api } from '../lib/api'
-import { useDebounce } from '../lib/useDebounce'
+import { api } from '../../lib/api'
+import { useDebounce } from '../../lib/useDebounce'
 
 type Item = {
     street: string

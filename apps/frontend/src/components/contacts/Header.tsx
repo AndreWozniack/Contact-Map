@@ -1,8 +1,13 @@
 import { AppBar, Toolbar, Typography, IconButton, Divider } from '@mui/material'
 import LogoutIcon from '@mui/icons-material/Logout'
-import { useAuth } from "../hooks/useAuth";
+import SettingsIcon from '@mui/icons-material/Settings'
+import { useAuth } from "../../hooks/useAuth";
 
-export default function ContactsHeader() {
+interface ContactsHeaderProps {
+  onOpenSettings: (event: React.MouseEvent<HTMLElement>) => void;
+}
+
+export default function Header({ onOpenSettings }: ContactsHeaderProps) {
     const { user, logout } = useAuth()
 
     return (
@@ -11,7 +16,9 @@ export default function ContactsHeader() {
                 <Typography variant="h4" sx={{ flex: 1, fontWeight: 700 }}>
                     Contatos
                 </Typography>
-
+                <IconButton onClick={onOpenSettings} aria-label="Configurações" color="inherit">
+                    <SettingsIcon />
+                </IconButton>
                 <Divider flexItem orientation="vertical" sx={{ mx: 0.5 }} />
 
                 <Typography color="text.secondary" sx={{ mr: 1 }}>

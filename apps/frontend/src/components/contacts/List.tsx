@@ -1,6 +1,6 @@
 import { Box, Stack, Paper, Pagination } from '@mui/material'
-import ContactCard from './ContactCard'
-import type { Contact } from '../types'
+import { ContactCard } from '../ui'
+import type { Contact } from '../../types'
 
 type Props = {
     contacts: Contact[]
@@ -8,7 +8,7 @@ type Props = {
     loading: boolean
     page: number
     totalPages: number
-    listRef: React.RefObject<HTMLDivElement>
+    listRef: React.RefObject<HTMLDivElement | null>
     onContactSelect: (id: number) => void
     onContactCopy: (contact: Contact) => void
     onContactEdit: (contact: Contact) => void
@@ -16,7 +16,7 @@ type Props = {
     onPageChange: (page: number) => void
 }
 
-export default function ContactsList({
+export default function List({
     contacts,
     selectedId,
     loading,

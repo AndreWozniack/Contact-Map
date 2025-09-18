@@ -4,7 +4,7 @@ import {
 } from '@mui/material';
 import { useAuth } from "../hooks/useAuth";
 import { useLocation, useNavigate } from 'react-router-dom';
-import Center from "../components/Center.tsx";
+import Center from "../components/ui/Center.tsx";
 
 /**
  * Página de Login
@@ -39,7 +39,6 @@ export default function LoginPage() {
             await login(email, password);
             nav(from, { replace: true });
         } catch (e: unknown) {
-            // Trata diferentes tipos de erro da API
             const error = e as { detail?: { message?: string } };
             if (error?.detail?.message === 'Invalid credentials') {
                 setErr('Credenciais inválidas');

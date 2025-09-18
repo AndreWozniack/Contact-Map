@@ -26,22 +26,12 @@ type Contact = {
     cpf?: string | null;
 };
 
-/**
- * Tipo para definir foco em um contato específico
- */
-type Focus = { id: number; name: string; lat: number; lng: number };
 
-/**
- * Props do componente ContactsMap
- */
+type Focus = { id: number; name: string; lat: number; lng: number };
 type ContactsMapProps = {
-    /** Lista de contatos a serem exibidos no mapa */
     contacts: Contact[];
-    /** Altura do mapa (padrão: 100%) */
     height?: number | string;
-    /** Largura do mapa (padrão: 100%) */
     width?: number | string;
-    /** Contato para focar e centralizar no mapa */
     focus?: Focus | null;
 };
 
@@ -55,7 +45,7 @@ type ContactsMapProps = {
  * @param props Propriedades do componente
  * @returns Mapa com marcadores dos contatos
  */
-export default function ContactsMap({
+export default function ContactMap({
     contacts,
     height = "100%",
     width = "100%",
@@ -83,9 +73,14 @@ export default function ContactsMap({
     );
 
     const [activeId, setActiveId] = useState<number | null>(null);
+    
     useEffect(() => {
         setActiveId(focus?.id ?? null);
     }, [focus?.id]);
+
+    const handleMarkerClick = (id: number) => {
+        setActiveId(id);
+    };
 
     return (
         <Box sx={{ height: h, width: w, borderRadius: 2, overflow: "hidden" }}>
@@ -100,7 +95,10 @@ export default function ContactsMap({
                     style={{ width: "100%", height: "100%" }}
                     disableDefaultUI
                 >
-                    <FitOrPan points={markers.map((m) => m.pos)} focus={focus} />
+                    <FitOrPan 
+                        points={markers.map((m) => m.pos)} 
+                        focus={focus} 
+                    />
 
                     {markers.map((m) => {
                         const selected = activeId === m.id;
@@ -109,7 +107,7 @@ export default function ContactsMap({
                                 key={m.id}
                                 position={m.pos}
                                 title={m.name}
-                                onClick={() => setActiveId(m.id)}
+                                onClick={() => handleMarkerClick(m.id)}
                             >
                                 <Pin
                                     scale={selected ? 1.3 : 1}
@@ -177,8 +175,10 @@ function FitOrPan({
 
         if (focus) {
             smoothPanZoom(map, { lat: focus.lat, lng: focus.lng }, 16, {
-                steps: 150,
-                ease: (t) => 1 - Math.pow(1 - t, 3),
+                steps: 100,
+                ease: (t) => {
+                    return 1 - Math.pow(1 - t, 4);
+                },
             });
             return;
         }
@@ -203,7 +203,7 @@ function smoothPanZoom(
     finalZoom: number,
     opts?: { duration?: number; steps?: number; ease?: (t: number) => number }
 ): Promise<void> {
-    const steps = opts?.steps ?? 150;
+    const steps = opts?.steps ?? 100;
     const ease = opts?.ease ?? ((t: number) => t);
 
     const start = map.getCenter()!;
@@ -212,14 +212,43 @@ function smoothPanZoom(
     const from = { lat: start.lat(), lng: start.lng() };
     const to = target;
 
+    const latDiff = Math.abs(to.lat - from.lat);
+    const lngDiff = Math.abs(to.lng - from.lng);
+    const distance = Math.sqrt(latDiff * latDiff + lngDiff * lngDiff);
+
+    if (distance < 0.01) {
+        map.panTo(target);
+        map.setZoom(finalZoom);
+        return Promise.resolve();
+    }
+
     let i = 0;
     return new Promise<void>((resolve) => {
         const tick = () => {
             i++;
-            const t = ease(Math.min(1, i / steps));
+            const progress = Math.min(1, i / steps);
+            const t = ease(progress);
+            
             const lat = from.lat + (to.lat - from.lat) * t;
             const lng = from.lng + (to.lng - from.lng) * t;
-            const zoom = startZoom + (finalZoom - startZoom) * t;
+            
+            let zoom;
+            if (distance > 0.1) {
+                if (progress < 0.4) {
+                    const zoomOutProgress = progress / 0.4;
+                    const minZoom = Math.max(startZoom - 3, 6);
+                    zoom = startZoom - (startZoom - minZoom) * ease(zoomOutProgress);
+                } else {
+                    const zoomInProgress = (progress - 0.4) / 0.6;
+                    const minZoom = Math.max(startZoom - 3, 6);
+                    zoom = minZoom + (finalZoom - minZoom) * ease(zoomInProgress);
+                }
+            } else {
+                const zoomEase = progress < 0.5 
+                    ? 2 * progress * progress 
+                    : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+                zoom = startZoom + (finalZoom - startZoom) * zoomEase;
+            }
 
             map.setCenter({ lat, lng });
             map.setZoom(zoom);

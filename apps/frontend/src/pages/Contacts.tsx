@@ -1,48 +1,29 @@
 import { useState } from "react";
 import {
-  AppBar,
-  Toolbar,
-  Typography,
-  IconButton,
   Container,
-  InputAdornment,
-  Select,
-  MenuItem,
-  ToggleButtonGroup,
-  ToggleButton,
-  Pagination,
-  Stack,
   Box,
   LinearProgress,
-  Button,
   Paper,
-  TextField,
-  Divider,
   Snackbar,
-  Menu,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
-import SearchIcon from "@mui/icons-material/Search";
-import RefreshIcon from "@mui/icons-material/Refresh";
-import LogoutIcon from "@mui/icons-material/Logout";
-import { useAuth } from "../hooks/useAuth";
-import SettingsIcon from '@mui/icons-material/Settings';
 
-import ContactCard from "../components/ContactCard";
-import ContactsMap from "../components/ContactsMap.tsx";
-import ContactDialog from "../components/ContactDialog";
+import {
+  Header,
+  SearchBar,
+  Filters,
+  List,
+  ContactMap,
+  Dialogs,
+  SettingsMenu,
+  DeleteAccountDialog,
+} from "../components/contacts";
+
 import type { Contact } from "../types";
 import { api } from "../lib/api";
 
 import { useContacts } from "../hooks/useContacts";
-import { useSelectedContact } from "../hooks/useSelectedContact.ts";
+import { useSelectedContact } from "../hooks/useSelectedContact";
 import { useClipboard } from "../hooks/useClipboard";
-
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
-import Alert from "@mui/material/Alert";
 
 /**
  * Página principal de gerenciamento de contatos
@@ -57,8 +38,6 @@ import Alert from "@mui/material/Alert";
  * @returns Componente da página de contatos
  */
 export default function ContactsPage() {
-  const { user, logout } = useAuth();
-
   const {
     q,
     setQ,
@@ -85,15 +64,8 @@ export default function ContactsPage() {
 
   const [editing, setEditing] = useState<Contact | null>(null);
   const [openNew, setOpenNew] = useState(false);
-
   const [settingsEl, setSettingsEl] = useState<null | HTMLElement>(null);
-  const openSettings = Boolean(settingsEl);
-
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [pwd, setPwd] = useState('');
-  const [deleting, setDelering] = useState(false);
-  const [delErr, setDelErr] = useState<string | null>(null);
-
 
   function handleOpenSettings(event: React.MouseEvent<HTMLElement>) {
     setSettingsEl(event.currentTarget);
@@ -108,72 +80,35 @@ export default function ContactsPage() {
   }
 
   async function handleDelete(c: Contact) {
-    const ok = confirm(`Apagar o contato “${c.name}”?`);
+    const ok = confirm(`Apagar o contato "${c.name}"?`);
     if (!ok) return;
     await api.del<void>(`/contacts/${c.id}`);
     setRows((prev) => prev.filter((r) => r.id !== c.id));
     if (selectedId === c.id) setSelectedId(null);
-    // TODO: Snackbar “Contato apagado” 
   }
 
-  async function handleConfirmDelete() {
-    setDelErr(null);
-    setDelering(true);
-    try {
-      await api.del('/account', { password: pwd });
-      await logout();
-    } catch (error: unknown) {
-      const err = error as { detail?: { message?: string } };
-      setDelErr(err?.detail?.message || 'Senha inválida ou erro ao excluir a conta.');
-    } finally {
-      setDelering(false);
-    }
-  }
+  const handleContactUpdated = (updated: Contact) => {
+    setRows((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+    setEditing(null);
+  };
+
+  const handleContactCreated = (newContact: Contact) => {
+    setRows((prev) => [newContact, ...prev]);
+    setOpenNew(false);
+  };
 
   return (
     <Box
       sx={{ height: "100dvh", display: "grid", gridTemplateRows: "auto 1fr" }}
     >
-      <AppBar
-        position="static"
-        color="default"
-        elevation={0}
-        sx={{ borderBottom: 1, borderColor: "divider" }}
-      >
-        <Toolbar sx={{ gap: 1 }}>
-          <Typography variant="h4" sx={{ flex: 1, fontWeight: 700 }}>
-            Contatos
-          </Typography>
-          <IconButton onClick={handleOpenSettings} aria-label="Configurações" color="inherit">
-            <SettingsIcon />
-          </IconButton>
-          <Menu
-            anchorEl={settingsEl}
-            open={openSettings}
-            onClose={handleCloseSettings}
-            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-            transformOrigin={{ vertical: "top", horizontal: "right" }}
-          >
-            <MenuItem
-              onClick={() => {
-                handleCloseSettings();
-                setConfirmOpen(true);
-              }}
-              sx={{ color: "error.main", fontWeight: 600 }}
-            >
-              Excluir minha conta
-            </MenuItem>
-          </Menu>
-          <Divider flexItem orientation="vertical" sx={{ mx: 0.5 }} />
-          <Typography color="text.secondary" sx={{ mr: 1 }}>
-            {user?.name}
-          </Typography>
-          <IconButton onClick={logout} aria-label="Sair" color="inherit">
-            <LogoutIcon />
-          </IconButton>
-        </Toolbar>
+      <Header onOpenSettings={handleOpenSettings} />
 
-      </AppBar>
+      <SettingsMenu
+        anchorEl={settingsEl}
+        open={Boolean(settingsEl)}
+        onClose={handleCloseSettings}
+        onDeleteAccount={() => setConfirmOpen(true)}
+      />
 
       <Container
         maxWidth={false}
@@ -201,170 +136,53 @@ export default function ContactsPage() {
               minWidth: 0,
             }}
           >
-            {/* Filtros e ações */}
-            <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-              <TextField
-                value={q}
-                onChange={(e) => {
-                  setPage(1);
-                  setQ(e.target.value);
-                }}
-                placeholder="Buscar por nome ou CPF"
-                size="small"
-                sx={{ flex: 1, minWidth: 0 }}
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon />
-                      </InputAdornment>
-                    ),
-                  },
-                }}
-              />
-
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                sx={{ borderRadius: 2 }}
-                onClick={() => setOpenNew(true)}
-              >
-                Novo
-              </Button>
-
-              <ContactDialog
-                open={!!editing}
-                contact={editing}
-                onClose={() => setEditing(null)}
-                onSaved={(updated) => {
-                  setRows((prev) =>
-                    prev.map((r) => (r.id === updated.id ? updated : r))
-                  );
-                  setEditing(null);
-                }}
-              />
-              <ContactDialog
-                open={openNew}
-                contact={null}
-                onClose={() => setOpenNew(false)}
-                onSaved={(newContact) => {
-                  setRows((prev) => [newContact, ...prev]);
-                  setOpenNew(false);
-                }}
-              />
-            </Stack>
+            <SearchBar
+              searchValue={q}
+              onSearchChange={setQ}
+              onNewContact={() => setOpenNew(true)}
+              onPageChange={setPage}
+            />
 
             {loading && <LinearProgress sx={{ mb: 1 }} />}
+            
             <Paper sx={{ p: 1, mb: 1 }}>
-              {/* Filtros de ordenação e paginação */}
-              <Stack
-                direction="row"
-                spacing={1}
-                alignItems="center"
-                sx={{ mb: 1.5 }}
-              >
-                <Select
-                  size="small"
-                  value={sort}
-                  onChange={(e) => setSort(e.target.value)}
-                >
-                  <MenuItem value="name">Nome</MenuItem>
-                  <MenuItem value="cpf">CPF</MenuItem>
-                  <MenuItem value="created_at">Criados</MenuItem>
-                </Select>
-                <ToggleButtonGroup
-                  size="small"
-                  color="primary"
-                  exclusive
-                  value={dir}
-                  onChange={(_, v) => v && setDir(v)}
-                >
-                  <ToggleButton value="asc">ASC</ToggleButton>
-                  <ToggleButton value="desc">DESC</ToggleButton>
-                </ToggleButtonGroup>
-                <Select
-                  size="small"
-                  value={perPage}
-                  onChange={(e) => {
-                    setPerPage(Number(e.target.value));
-                    setPage(1);
-                  }}
-                >
-                  {[5, 10, 20, 50].map((n) => (
-                    <MenuItem key={n} value={n}>
-                      {n}/pág
-                    </MenuItem>
-                  ))}
-                </Select>
-                <Button
-                  size="small"
-                  startIcon={<RefreshIcon />}
-                  onClick={fetchData}
-                >
-                  Atualizar
-                </Button>
-                <Button size="small" onClick={reset}>
-                  Limpar
-                </Button>
-              </Stack>
+              <Filters
+                sort={sort}
+                dir={dir}
+                perPage={perPage}
+                onSortChange={setSort}
+                onDirChange={setDir}
+                onPerPageChange={(value: number) => {
+                  setPerPage(value);
+                  setPage(1);
+                }}
+                onRefresh={fetchData}
+                onReset={reset}
+                onPageChange={setPage}
+              />
+
               {/* Lista de contatos */}
-              <Box
-                ref={listRef}
-                padding="12"
-                sx={{ overflow: "auto", pr: 0.5 }}
-              >
-                {rows.length === 0 && !loading && (
-                  <Paper
-                    sx={{ p: 2, textAlign: "center", color: "text.secondary" }}
-                  >
-                    Nenhum contato encontrado.
-                  </Paper>
-                )}
-
-                <Stack spacing={1}>
-                  {rows.map((c) => (
-                    <Box key={c.id} data-id={c.id}>
-                      <ContactCard
-                        name={c.name}
-                        subtitle={[
-                          c.street,
-                          c.number,
-                          c.neighborhood,
-                          c.city,
-                          c.state,
-                        ]
-                          .filter(Boolean)
-                          .join(", ")}
-                        selected={selectedId === c.id}
-                        onClick={() => setSelectedId(c.id)}
-                        contact={c}
-                        onCopy={copyContact}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                      />
-                    </Box>
-                  ))}
-                </Stack>
-
-                <Stack direction="row" justifyContent="center" sx={{ py: 1.5 }}>
-                  <Pagination
-                    page={page}
-                    count={totalPages}
-                    onChange={(_, p) => setPage(p)}
-                    color="primary"
-                  />
-                </Stack>
-              </Box>
+              <List
+                contacts={rows}
+                selectedId={selectedId}
+                loading={loading}
+                page={page}
+                totalPages={totalPages}
+                listRef={listRef}
+                onContactSelect={setSelectedId}
+                onContactCopy={copyContact}
+                onContactEdit={handleEdit}
+                onContactDelete={handleDelete}
+                onPageChange={setPage}
+              />
             </Paper>
-
-            {loading && <LinearProgress sx={{ mb: 1 }} />}
           </Box>
 
           {/* Mapa dos contatos */}
           <Box sx={{ height: "100%" }}>
             <Paper sx={{ p: 1, height: "100%", borderRadius: 2 }}>
               <Box sx={{ height: "100%", borderRadius: 2, overflow: "hidden" }}>
-                <ContactsMap
+                <ContactMap
                   contacts={rows}
                   focus={
                     selected &&
@@ -386,6 +204,21 @@ export default function ContactsPage() {
           </Box>
         </Box>
       </Container>
+
+      <Dialogs
+        editing={editing}
+        openNew={openNew}
+        onCloseEdit={() => setEditing(null)}
+        onCloseNew={() => setOpenNew(false)}
+        onContactUpdated={handleContactUpdated}
+        onContactCreated={handleContactCreated}
+      />
+
+      <DeleteAccountDialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+      />
+
       <Snackbar
         open={copiedOpen}
         autoHideDuration={2000}
@@ -393,40 +226,6 @@ export default function ContactsPage() {
         message="Copiado!"
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       />
-      <Dialog open={confirmOpen} onClose={() => !deleting && setConfirmOpen(false)}>
-        <DialogTitle>Excluir conta</DialogTitle>
-        <DialogContent sx={{ pt: 1 }}>
-          <Typography sx={{ mb: 2 }}>
-            Essa ação é irreversível. Para confirmar, digite sua senha.
-          </Typography>
-
-          {delErr && <Alert severity="error" sx={{ mb: 2 }}>{delErr}</Alert>}
-
-          <TextField
-            label="Senha"
-            type="password"
-            value={pwd}
-            onChange={(e) => setPwd(e.target.value)}
-            fullWidth
-            autoFocus
-            disabled={deleting}
-          />
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setConfirmOpen(false)} disabled={deleting}>
-            Cancelar
-          </Button>
-          <Button
-            variant="contained"
-            color="error"
-            onClick={handleConfirmDelete}
-            disabled={!pwd || deleting}
-          >
-            {deleting ? "Excluindo..." : "Excluir conta"}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
     </Box>
   );
 }

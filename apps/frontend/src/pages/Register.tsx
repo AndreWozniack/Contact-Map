@@ -3,7 +3,7 @@ import { Alert, Box, Button, Stack, TextField, Typography, CircularProgress, Lin
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useAuth } from "../hooks/useAuth";
-import Center from "../components/Center.tsx";
+import Center from "../components/ui/Center.tsx";
 import type { User } from "../contexts/auth-context";
 
 /**

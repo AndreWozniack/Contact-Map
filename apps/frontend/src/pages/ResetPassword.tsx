@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Alert, Box, Button, Stack, TextField, Typography, CircularProgress, Link } from '@mui/material'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
-import Center from "../components/Center.tsx";
+import Center from "../components/ui/Center.tsx";
 
 /**
  * Página de Redefinição de Senha
