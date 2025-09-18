@@ -9,7 +9,7 @@ type Props = {
     page: number
     totalPages: number
     listRef: React.RefObject<HTMLDivElement | null>
-    onContactSelect: (id: number) => void
+    onContactSelect: (id: number | null ) => void
     onContactCopy: (contact: Contact) => void
     onContactEdit: (contact: Contact) => void
     onContactDelete: (contact: Contact) => void
@@ -37,6 +37,8 @@ export default function List({
         )
     }
 
+    
+
     return (
         <>
             <Stack spacing={1} ref={listRef}>
@@ -52,7 +54,9 @@ export default function List({
                                 contact.state
                             ].filter(Boolean).join(', ')}
                             selected={selectedId === contact.id}
-                            onClick={() => onContactSelect(contact.id)}
+                            onClick={() => onContactSelect(
+                                selectedId === contact.id ? null : contact.id
+                            )}
                             contact={contact}
                             onCopy={onContactCopy}
                             onEdit={onContactEdit}

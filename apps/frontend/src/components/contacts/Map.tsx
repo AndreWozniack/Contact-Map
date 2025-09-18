@@ -1,17 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { Box } from "@mui/material";
 import {
-    APIProvider,
-    Map,
-    AdvancedMarker,
-    InfoWindow,
-    useMap,
-    Pin,
+  APIProvider,
+  Map,
+  AdvancedMarker,
+  InfoWindow,
+  useMap,
+  Pin,
 } from "@vis.gl/react-google-maps";
+import { Tween, Easing, Group } from "@tweenjs/tween.js";
 
-/**
- * Tipo de contato para exibição no mapa
- */
+
+
 type Contact = {
     id: number;
     name: string;
@@ -55,6 +55,7 @@ export default function ContactMap({
     const mapId = import.meta.env.VITE_GMAPS_MAP_ID as string;
     const h = typeof height === "number" ? `${height}px` : height;
     const w = typeof width === "number" ? `${width}px` : width;
+
 
     const markers = useMemo(
         () =>
@@ -160,105 +161,182 @@ export default function ContactMap({
         </Box>
     );
 }
-
 function FitOrPan({
-    points,
-    focus,
+  points,
+  focus,
 }: {
-    points: google.maps.LatLngLiteral[];
-    focus: Focus | null;
+  points: google.maps.LatLngLiteral[];
+  focus: Focus | null;
 }) {
-    const map = useMap("contacts-map");
+  const map = useMap("contacts-map");
+  const groupRef = useRef<Group | null>(null);
+  const rafRef = useRef<number | null>(null);
 
-    useEffect(() => {
-        if (!map) return;
+  useEffect(() => {
+    if (!groupRef.current) groupRef.current = new Group();
 
-        if (focus) {
-            smoothPanZoom(map, { lat: focus.lat, lng: focus.lng }, 16, {
-                steps: 100,
-                ease: (t) => {
-                    return 1 - Math.pow(1 - t, 4);
-                },
-            });
-            return;
-        }
+    let running = true;
+    const loop = (time: number) => {
+      if (!running) return;
+      groupRef.current!.update(time);
+      rafRef.current = requestAnimationFrame(loop);
+    };
+    rafRef.current = requestAnimationFrame(loop);
 
-        if (points.length) {
-            const b = new google.maps.LatLngBounds();
-            points.forEach((p) => b.extend(p));
-            map.fitBounds(b, 30);
-            return;
-        }
+    return () => {
+      running = false;
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+      groupRef.current?.removeAll();
+    };
+  }, []);
 
-        map.setCenter({ lat: -25.4284, lng: -49.2733 });
-        map.setZoom(15);
-    }, [map, points, focus]);
+  useEffect(() => {
+    if (!map) return;
+    if (!groupRef.current) groupRef.current = new Group();
 
-    return null;
-}
+    groupRef.current.removeAll();
+    map.moveCamera({ center: map.getCenter()!.toJSON(), zoom: map.getZoom() ?? 14 });
 
-function smoothPanZoom(
-    map: google.maps.Map,
-    target: google.maps.LatLngLiteral,
-    finalZoom: number,
-    opts?: { duration?: number; steps?: number; ease?: (t: number) => number }
-): Promise<void> {
-    const steps = opts?.steps ?? 100;
-    const ease = opts?.ease ?? ((t: number) => t);
 
-    const start = map.getCenter()!;
-    const startZoom = map.getZoom() ?? 14;
+    let targetCenter: google.maps.LatLngLiteral;
+    let targetZoom: number;
 
-    const from = { lat: start.lat(), lng: start.lng() };
-    const to = target;
-
-    const latDiff = Math.abs(to.lat - from.lat);
-    const lngDiff = Math.abs(to.lng - from.lng);
-    const distance = Math.sqrt(latDiff * latDiff + lngDiff * lngDiff);
-
-    if (distance < 0.01) {
-        map.panTo(target);
-        map.setZoom(finalZoom);
-        return Promise.resolve();
+    if (focus) {
+      targetCenter = { lat: focus.lat, lng: focus.lng };
+      targetZoom = 16;
+    } else if (points.length > 1) {
+      const { center, zoom } = getCenterAndZoomForPoints(map, points, 30);
+      targetCenter = center;
+      targetZoom = zoom;
+    } else if (points.length === 1) {
+      targetCenter = points[0];
+      targetZoom = 15;
+    } else {
+      targetCenter = { lat: -25.4284, lng: -49.2733 };
+      targetZoom = 13;
     }
 
-    let i = 0;
-    return new Promise<void>((resolve) => {
-        const tick = () => {
-            i++;
-            const progress = Math.min(1, i / steps);
-            const t = ease(progress);
-            
-            const lat = from.lat + (to.lat - from.lat) * t;
-            const lng = from.lng + (to.lng - from.lng) * t;
-            
-            let zoom;
-            if (distance > 0.1) {
-                if (progress < 0.4) {
-                    const zoomOutProgress = progress / 0.4;
-                    const minZoom = Math.max(startZoom - 3, 6);
-                    zoom = startZoom - (startZoom - minZoom) * ease(zoomOutProgress);
-                } else {
-                    const zoomInProgress = (progress - 0.4) / 0.6;
-                    const minZoom = Math.max(startZoom - 3, 6);
-                    zoom = minZoom + (finalZoom - minZoom) * ease(zoomInProgress);
-                }
-            } else {
-                const zoomEase = progress < 0.5 
-                    ? 2 * progress * progress 
-                    : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-                zoom = startZoom + (finalZoom - startZoom) * zoomEase;
-            }
+    const currentCenter = map.getCenter()!;
+    const state = {
+      lat: currentCenter.lat(),
+      lng: currentCenter.lng(),
+      zoom: map.getZoom() ?? 14,
+    };
 
-            map.setCenter({ lat, lng });
-            map.setZoom(zoom);
+    const dLat = Math.abs(targetCenter.lat - state.lat);
+    const dLng = Math.abs(targetCenter.lng - state.lng);
+    const dist = Math.hypot(dLat, dLng);
 
-            if (i < steps) {
-                requestAnimationFrame(tick);
-            } else {
-                resolve();
-            }
-        };
-        requestAnimationFrame(tick);
-    });
+    const zoomDelta = Math.abs(targetZoom - state.zoom);
+    const goingOut = targetZoom < state.zoom;
+    const needsDolly = goingOut && dist > 0.05 && zoomDelta < 1.2;
+
+    const midZoom = needsDolly
+    ? Math.max(2, state.zoom - 2)
+    : null;
+
+
+    const duration = focus ? 750 : 900;
+
+    const tweenPos =
+      midZoom === null
+        ? new Tween(state, groupRef.current)
+            .to(
+              { lat: targetCenter.lat, lng: targetCenter.lng, zoom: targetZoom },
+              duration
+            )
+            .easing(Easing.Quadratic.InOut)
+        :
+          new Tween(state, groupRef.current)
+            .to(
+              { lat: targetCenter.lat, lng: targetCenter.lng },
+              duration
+            )
+            .easing(Easing.Quadratic.InOut);
+
+    if (midZoom !== null) {
+      new Tween(state, groupRef.current)
+        .to({ zoom: midZoom }, duration * 0.4)
+        .easing(Easing.Cubic.InOut)
+        .onUpdate(applyCamera)
+        .start();
+
+      new Tween(state, groupRef.current)
+        .to({ zoom: targetZoom }, duration * 0.6)
+        .delay(duration * 0.4)
+        .easing(Easing.Cubic.InOut)
+        .onUpdate(applyCamera)
+        .start();
+    }
+
+    tweenPos.onUpdate(applyCamera).start();
+
+    function applyCamera() {
+      map!.moveCamera({
+        center: { lat: state.lat, lng: state.lng },
+        zoom: state.zoom,
+      });
+    }
+  }, [map, points, focus]);
+
+  return null;
+}
+
+/** Calcula center e zoom alvo p/ um conjunto de pontos com padding, sem fitBounds no final */
+function getCenterAndZoomForPoints(
+  map: google.maps.Map,
+  points: google.maps.LatLngLiteral[],
+  paddingPx: number
+) {
+  const bounds = new google.maps.LatLngBounds();
+  points.forEach((p) => bounds.extend(p));
+
+  const center = bounds.getCenter();
+  const centerLiteral = { lat: center.lat(), lng: center.lng() };
+
+  const div = map.getDiv() as HTMLElement;
+  const width = div.clientWidth || 1;
+  const height = div.clientHeight || 1;
+
+  const zoom = getZoomForBounds(bounds, width, height, paddingPx);
+  return { center: centerLiteral, zoom };
+}
+
+function getZoomForBounds(
+  bounds: google.maps.LatLngBounds,
+  mapWidth: number,
+  mapHeight: number,
+  padding: number
+): number {
+  const WORLD_DIM = { height: 256, width: 256 };
+  const ZOOM_MAX = 21;
+
+  function latRad(lat: number) {
+    const sin = Math.sin((lat * Math.PI) / 180);
+    const clamped = Math.min(Math.max(sin, -0.9999), 0.9999);
+    return Math.log((1 + clamped) / (1 - clamped)) / 2;
+  }
+  function zoom(mapPx: number, worldPx: number, fraction: number) {
+    return Math.floor(Math.log(mapPx / worldPx / fraction) / Math.LN2);
+  }
+
+  const ne = bounds.getNorthEast();
+  const sw = bounds.getSouthWest();
+
+  const latFraction = Math.max(
+    (latRad(ne.lat()) - latRad(sw.lat())) / Math.PI,
+    1e-9
+  );
+  const lngDiff = ne.lng() - sw.lng();
+  const lngFraction = Math.max((lngDiff < 0 ? lngDiff + 360 : lngDiff) / 360, 1e-9);
+
+  const padW = Math.max(0, mapWidth - 2 * padding);
+  const padH = Math.max(0, mapHeight - 2 * padding);
+
+  const latZoom = zoom(padH, WORLD_DIM.height, latFraction);
+  const lngZoom = zoom(padW, WORLD_DIM.width, lngFraction);
+
+  const target = Math.min(latZoom, lngZoom, ZOOM_MAX);
+  return Math.max(2, target);
 }
