@@ -55,29 +55,6 @@ docker-compose -f docker-compose up -d
 - Frontend: http://localhost:8080
 - Backend API: http://localhost:8080/api
 
-
-## 📊 Estrutura do Projeto
-
-```
-Contact-Map/
-├── apps/
-│   ├── backend/          # API Laravel
-│   │   ├── app/
-│   │   │   ├── Models/   # Modelos (Contact, User)
-│   │   │   ├── Http/     # Controllers e Requests
-│   │   │   └── Rules/    # Validações customizadas
-│   │   ├── database/     # Migrations e Seeders
-│   │   └── routes/       # Rotas da API
-│   └── frontend/         # Interface React
-│       ├── src/
-│       │   ├── components/  # Componentes reutilizáveis
-│       │   ├── pages/       # Páginas da aplicação
-│       │   ├── contexts/    # Contextos React
-│       │   └── hooks/       # Hooks customizados
-├── infra/               # Configurações Docker
-└── docker-compose*.yml  # Orquestração de containers
-```
-
 ## Autor
 
 **Andre Wozniack**
